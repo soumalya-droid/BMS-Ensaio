@@ -11,9 +11,8 @@ import LocationTab from '@/components/BatteryDetails/LocationTab';
 import LogsTab from '@/components/BatteryDetails/LogsTab';
 import SettingsTab from '@/components/BatteryDetails/SettingsTab';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { getBatteryById, getLogsByBattery, generateHistoricalData } from '@/data/mockData';
 import { toast } from '@/components/ui/use-toast';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle } from 'lucide-react';
 
 export default function BatteryDetails() {
   const { id } = useParams();
@@ -24,54 +23,20 @@ export default function BatteryDetails() {
   const [voltageData, setVoltageData] = useState([]);
   const [temperatureData, setTemperatureData] = useState([]);
   const [healthData, setHealthData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
-    async function fetchData() {
-      try {
-        setLoading(true);
-
-        const [
-          batteryResponse,
-          logsResponse,
-          voltageResponse,
-          temperatureResponse,
-          healthResponse
-        ] = await Promise.all([
-          fetch(`http://localhost:4000/api/batteries/${id}`),
-          fetch(`http://localhost:4000/api/batteries/${id}/logs`),
-          fetch(`http://localhost:4000/api/batteries/${id}/historical?metric=voltage`),
-          fetch(`http://localhost:4000/api/batteries/${id}/historical?metric=temperature`),
-          fetch(`http://localhost:4000/api/batteries/${id}/historical?metric=health`),
-        ]);
-
-        if (!batteryResponse.ok) {
-          if (batteryResponse.status === 404) {
-            toast({ title: "Battery not found", variant: "destructive" });
-            navigate('/dashboard');
-          } else {
-            throw new Error('Failed to fetch battery details');
-          }
-          return;
-        }
-
-        const batteryData = await batteryResponse.json();
-        setBattery(batteryData);
-
-        if (logsResponse.ok) setLogs(await logsResponse.json());
-        if (voltageResponse.ok) setVoltageData(await voltageResponse.json());
-        if (temperatureResponse.ok) setTemperatureData(await temperatureResponse.json());
-        if (healthResponse.ok) setHealthData(await healthResponse.json());
-
-      } catch (err) {
-        setError(err.message);
-        console.error("Error fetching battery details:", err);
-      } finally {
-        setLoading(false);
-      }
+    const batteryData = getBatteryById(id);
+    if (!batteryData) {
+      toast({ title: "Battery not found", variant: "destructive" });
+      navigate('/dashboard');
+      return;
     }
-    fetchData();
+
+    setBattery(batteryData);
+    setLogs(getLogsByBattery(id));
+    setVoltageData(generateHistoricalData(id, 'voltage'));
+    setTemperatureData(generateHistoricalData(id, 'temperature'));
+    setHealthData(generateHistoricalData(id, 'health'));
   }, [id, navigate]);
 
   const handleRemoteCommand = (command) => {
@@ -88,32 +53,10 @@ export default function BatteryDetails() {
     });
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-background">
-        <p className="text-lg">Loading battery details...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-background">
-        <Alert variant="destructive" className="max-w-md">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
   if (!battery) {
-    // This case should ideally be handled by the 404 redirection,
-    // but as a fallback:
     return (
-      <div className="flex items-center justify-center h-screen bg-background">
-        <p className="text-lg">Battery data could not be loaded.</p>
+      <div className="flex items-center justify-center h-screen">
+        Loading battery details...
       </div>
     );
   }
