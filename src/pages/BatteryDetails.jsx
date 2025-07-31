@@ -72,7 +72,8 @@ export default function BatteryDetails() {
       }
     }
     fetchData();
-  }, [id, navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleRemoteCommand = (command) => {
     toast({
