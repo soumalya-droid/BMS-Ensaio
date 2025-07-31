@@ -41,4 +41,208 @@ app.post('/api/login', async (req, res) => {
   res.json({ token, user: { id: user.id, name: user.name, email: user.email } });
 });
 
+// Middleware to verify JWT
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if (token == null) return res.sendStatus(401);
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) return res.sendStatus(403);
+    req.user = user;
+    next();
+  });
+};
+
+// Get all batteries with their latest values
+app.get('/api/batteries', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT DISTINCT ON (bms.device_id)
+        bms.device_id as id,
+        bms.pack_voltage,
+        bms.soc,
+        bms.soh,
+        bms.cycle_count,
+        bms.cell_temps,
+        bms.timestamp as last_update,
+        gps.gps_lat_coordinate as latitude,
+        gps.gps_long_coordinate as longitude
+      FROM bms_values bms
+      LEFT JOIN (
+        SELECT DISTINCT ON (device_id)
+          device_id,
+          gps_lat_coordinate,
+          gps_long_coordinate
+        FROM iot_gps
+        ORDER BY device_id, timestamp DESC
+      ) gps ON bms.device_id = gps.device_id
+      ORDER BY bms.device_id, bms.timestamp DESC
+    `);
+
+    const batteries = result.rows.map(b => ({
+      id: b.id,
+      voltage: b.pack_voltage,
+      stateOfCharge: b.soc,
+      health: b.soh,
+      cycleCount: b.cycle_count,
+      temperature: b.cell_temps && b.cell_temps.length > 0
+        ? Math.round(b.cell_temps.reduce((a, c) => a + c, 0) / b.cell_temps.length)
+        : 0,
+      status: b.pack_voltage > 10 ? 'online' : 'offline', // Simplified status
+      latitude: b.latitude,
+      longitude: b.longitude,
+      lastUpdate: b.last_update
+    }));
+
+    res.json(batteries);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get historical data for a specific battery
+app.get('/api/batteries/:id/historical', async (req, res) => {
+  const { id } = req.params;
+  const { metric } = req.query;
+
+  const allowedMetrics = {
+    voltage: 'pack_voltage',
+    temperature: 'cell_temps',
+    stateOfCharge: 'soc',
+    health: 'soh',
+  };
+
+  if (!allowedMetrics[metric]) {
+    return res.status(400).json({ error: 'Invalid metric' });
+  }
+
+  try {
+    const result = await pool.query(
+      `SELECT timestamp, ${allowedMetrics[metric]} as value
+       FROM bms_values
+       WHERE device_id = $1 AND timestamp >= NOW() - INTERVAL '24 hours'
+       ORDER BY timestamp ASC`,
+      [id]
+    );
+
+    const chartData = result.rows.map(row => {
+      let value;
+      if (metric === 'temperature' && Array.isArray(row.value)) {
+        value = row.value.length > 0
+          ? Math.round(row.value.reduce((a, b) => a + b, 0) / row.value.length)
+          : 0;
+      } else {
+        value = row.value;
+      }
+
+      return {
+        time: new Date(row.timestamp).toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
+        [metric]: value,
+      };
+    });
+
+    res.json(chartData);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get a single battery's details
+app.get('/api/batteries/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query(`
+      SELECT
+        bms.device_id as id,
+        bms.pack_voltage,
+        bms.pack_current,
+        bms.soc,
+        bms.soh,
+        bms.cycle_count,
+        bms.cell_temps,
+        bms.timestamp as last_update,
+        gps.gps_lat_coordinate as latitude,
+        gps.gps_long_coordinate as longitude
+      FROM bms_values bms
+      LEFT JOIN (
+        SELECT DISTINCT ON (device_id)
+          device_id,
+          gps_lat_coordinate,
+          gps_long_coordinate
+        FROM iot_gps
+        ORDER BY device_id, timestamp DESC
+      ) gps ON bms.device_id = gps.device_id
+      WHERE bms.device_id = $1
+      ORDER BY bms.timestamp DESC
+      LIMIT 1
+    `, [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Battery not found' });
+    }
+
+    const b = result.rows[0];
+    const batteryDetails = {
+      id: b.id,
+      voltage: b.pack_voltage,
+      current: b.pack_current,
+      stateOfCharge: b.soc,
+      health: b.soh,
+      cycleCount: b.cycle_count,
+      temperature: b.cell_temps && b.cell_temps.length > 0
+        ? Math.round(b.cell_temps.reduce((a, c) => a + c, 0) / b.cell_temps.length)
+        : 0,
+      status: b.pack_voltage > 10 ? 'online' : 'offline', // Simplified status
+      latitude: b.latitude,
+      longitude: b.longitude,
+      lastUpdate: b.last_update
+    };
+
+    res.json(batteryDetails);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get logs for a specific battery
+app.get('/api/batteries/:id/logs', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query(`
+      (SELECT
+        a.id,
+        a.timestamp,
+        'alarm' as "eventType",
+        ae.name as description,
+        a.bms_alarm as value
+      FROM bms_alarm a
+      LEFT JOIN bms_alarm_enum ae ON a.bms_alarm = ae.value
+      WHERE a.device_id = $1)
+      UNION ALL
+      (SELECT
+        f.id,
+        f.timestamp,
+        'fault' as "eventType",
+        fe.name as description,
+        f.bms_fault as value
+      FROM bms_fault f
+      LEFT JOIN bms_fault_enum fe ON f.bms_fault = fe.value
+      WHERE f.device_id = $1)
+      ORDER BY timestamp DESC
+      LIMIT 100
+    `, [id]);
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 app.listen(4000, () => console.log('Backend running on port 4000'));
