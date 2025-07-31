@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Menu, 
@@ -7,10 +7,20 @@ import {
   Sun, 
   Moon, 
   LogOut,
-  User
+  User,
+  AlertCircle,
+  CheckCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { toast } from '@/components/ui/use-toast';
@@ -18,19 +28,34 @@ import { toast } from '@/components/ui/use-toast';
 export default function Header({ onMenuClick }) {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
-  const handleSearch = () => {
-    toast({
-      title: "🔍 Search Feature",
-      description: "🚧 This feature isn't implemented yet—but don't worry! You can request it in your next prompt! 🚀",
-    });
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await fetch('http://localhost:4000/api/notifications');
+      if (!response.ok) {
+        throw new Error('Failed to fetch notifications');
+      }
+      const data = await response.json();
+      setNotifications(data);
+      setUnreadCount(data.filter(n => !n.read).length);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+    }
   };
 
-  const handleNotifications = () => {
-    toast({
-      title: "🔔 Notifications",
-      description: "🚧 This feature isn't implemented yet—but don't worry! You can request it in your next prompt! 🚀",
-    });
+  const handleMarkAsRead = async (type, id) => {
+    try {
+      await fetch(`http://localhost:4000/api/notifications/${type}/${id}/read`, { method: 'POST' });
+      fetchNotifications(); // Refresh notifications
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+    }
   };
 
   const handleProfile = () => {
@@ -84,17 +109,49 @@ export default function Header({ onMenuClick }) {
           )}
         </Button>
 
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleNotifications}
-          className="relative"
-        >
-          <Bell className="w-5 h-5" />
-          <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full text-xs flex items-center justify-center text-white">
-            3
-          </span>
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative"
+            >
+              <Bell className="w-5 h-5" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-xs flex items-center justify-center text-white">
+                  {unreadCount}
+                </span>
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-80">
+            <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {notifications.length > 0 ? (
+              notifications.map(n => (
+                <DropdownMenuItem key={`${n.type}-${n.id}`} onSelect={() => !n.read && handleMarkAsRead(n.type, n.id)}>
+                  <div className="flex items-start space-x-3">
+                    {n.type === 'alarm' ? <AlertCircle className="w-5 h-5 text-yellow-500" /> : <AlertCircle className="w-5 h-5 text-red-500" />}
+                    <div>
+                      <p className={`font-medium ${!n.read ? 'text-foreground' : 'text-muted-foreground'}`}>
+                        {n.type.charAt(0).toUpperCase() + n.type.slice(1)} Code: {n.code}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(n.timestamp).toLocaleString()}
+                      </p>
+                    </div>
+                    {!n.read && <div className="w-2 h-2 bg-blue-500 rounded-full ml-auto"></div>}
+                  </div>
+                </DropdownMenuItem>
+              ))
+            ) : (
+              <DropdownMenuItem disabled>
+                <CheckCircle className="w-5 h-5 mr-3" />
+                No new notifications
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         <Button
           variant="ghost"

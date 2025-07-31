@@ -9,7 +9,8 @@ import {
   Activity,
   AlertTriangle,
   TrendingUp,
-  MapPin
+  MapPin,
+  Search
 } from 'lucide-react';
 import Sidebar from '@/components/Layout/Sidebar';
 import Header from '@/components/Layout/Header';
@@ -17,6 +18,7 @@ import MetricCard from '@/components/Dashboard/MetricCard';
 import BatteryCard from '@/components/Dashboard/BatteryCard';
 import BatteryMap from '@/components/Dashboard/BatteryMap';
 import BatteryChart from '@/components/Charts/BatteryChart';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
@@ -27,6 +29,7 @@ export default function UserDashboard({ demo, sampleUser = {}, sampleBatteries =
   const [batteries, setBatteries] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [chartData, setChartData] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { user } = demo ? { user: sampleUser } : useAuth();
@@ -82,7 +85,10 @@ export default function UserDashboard({ demo, sampleUser = {}, sampleBatteries =
   };
 
   // Calculate metrics
-  const totalBatteries = batteries.length;
+  const filteredBatteries = batteries.filter(battery =>
+    battery.id.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  const totalBatteries = filteredBatteries.length;
   const onlineBatteries = batteries.filter(b => b.status === 'online').length;
   const avgHealth = batteries.length > 0 
     ? Math.round(batteries.reduce((sum, b) => sum + b.health, 0) / batteries.length)

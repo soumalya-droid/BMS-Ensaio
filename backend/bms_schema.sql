@@ -55,7 +55,8 @@ CREATE TABLE IF NOT EXISTS bms_alarm (
     event_code VARCHAR(8),
     device_type VARCHAR(32),
     bms_id VARCHAR(32),
-    bms_alarm INTEGER
+    bms_alarm INTEGER,
+    read BOOLEAN DEFAULT FALSE
 );
 
 -- BMS Fault Packet (evc_474)
@@ -67,7 +68,8 @@ CREATE TABLE IF NOT EXISTS bms_fault (
     device_type VARCHAR(32),
     bms_id VARCHAR(32),
     epochtime BIGINT,
-    bms_fault INTEGER
+    bms_fault INTEGER,
+    read BOOLEAN DEFAULT FALSE
 );
 
 -- IoT Bootup Packet (evc_476)

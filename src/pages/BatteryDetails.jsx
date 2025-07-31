@@ -82,11 +82,34 @@ export default function BatteryDetails() {
     });
   };
 
-  const handleExportData = () => {
-    toast({
-      title: "📊 Export Data",
-      description: "🚧 This feature isn't implemented yet—but don't worry! You can request it in your next prompt! 🚀",
-    });
+  const handleExportData = async () => {
+    try {
+      const response = await fetch(`http://localhost:4000/api/batteries/${id}/export`);
+      if (!response.ok) {
+        throw new Error('Failed to export data');
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `battery_${id}_export.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast({
+        title: "✅ Export Successful",
+        description: "The battery data has been downloaded.",
+      });
+    } catch (error) {
+      console.error("Error exporting data:", error);
+      toast({
+        title: "❌ Export Failed",
+        description: "Could not export battery data.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (loading) {

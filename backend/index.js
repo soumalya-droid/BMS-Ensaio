@@ -245,4 +245,81 @@ app.get('/api/batteries/:id/logs', async (req, res) => {
   }
 });
 
+// Export data for a specific battery as CSV
+app.get('/api/batteries/:id/export', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query('SELECT * FROM bms_values WHERE device_id = $1 ORDER BY timestamp DESC', [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'No data to export for this battery' });
+    }
+
+    const json2csv = (json) => {
+      const fields = Object.keys(json[0]);
+      const csv = [
+        fields.join(','),
+        ...json.map(row => fields.map(field => JSON.stringify(row[field])).join(','))
+      ].join('\n');
+      return csv;
+    };
+
+    const csvData = json2csv(result.rows);
+
+    res.header('Content-Type', 'text/csv');
+    res.attachment(`battery_${id}_export.csv`);
+    res.send(csvData);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get route data for a specific battery
+app.get('/api/batteries/:id/route', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query(
+      'SELECT gps_lat_coordinate as lat, gps_long_coordinate as lng FROM iot_gps WHERE device_id = $1 ORDER BY timestamp ASC',
+      [id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get all notifications
+app.get('/api/notifications', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT id, timestamp, 'alarm' as type, bms_alarm as code, read FROM bms_alarm
+      UNION ALL
+      SELECT id, timestamp, 'fault' as type, bms_fault as code, read FROM bms_fault
+      ORDER BY timestamp DESC
+      LIMIT 50
+    `);
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Mark a notification as read
+app.post('/api/notifications/:type/:id/read', async (req, res) => {
+  const { type, id } = req.params;
+  const table = type === 'alarm' ? 'bms_alarm' : 'bms_fault';
+
+  try {
+    await pool.query(`UPDATE ${table} SET read = TRUE WHERE id = $1`, [id]);
+    res.status(204).send();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 app.listen(4000, () => console.log('Backend running on port 4000'));
