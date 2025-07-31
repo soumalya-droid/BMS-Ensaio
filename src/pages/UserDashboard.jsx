@@ -20,38 +20,62 @@ import BatteryChart from '@/components/Charts/BatteryChart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
-import { getBatteriesByUser, getActiveAlerts, generateHistoricalData } from '@/data/mockData';
+import { getActiveAlerts } from '@/data/mockData'; // Keep for now
 
 export default function UserDashboard({ demo, sampleUser = {}, sampleBatteries = [], sampleAlerts = [] }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [batteries, setBatteries] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [chartData, setChartData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const { user } = demo ? { user: sampleUser } : useAuth();
   const navigate = demo ? () => {} : useNavigate();
 
   useEffect(() => {
-    if (demo) {
-      setBatteries(sampleBatteries);
-      setAlerts(sampleAlerts);
-      setChartData([]); // Optionally add static chart data for demo
-    } else {
-      // Load user's batteries
-      const userBatteries = getBatteriesByUser(user.id);
-      setBatteries(userBatteries);
-      // Load active alerts for user's batteries
-      const allAlerts = getActiveAlerts();
-      const userAlerts = allAlerts.filter(alert =>
-        userBatteries.some(battery => battery.id === alert.batteryId)
-      );
-      setAlerts(userAlerts);
-      // Generate chart data for the first battery
-      if (userBatteries.length > 0) {
-        const data = generateHistoricalData(userBatteries[0].id, 'voltage');
-        setChartData(data);
+    async function fetchData() {
+      if (demo) {
+        setBatteries(sampleBatteries);
+        setAlerts(sampleAlerts);
+        setChartData([]);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const batteriesResponse = await fetch('http://localhost:4000/api/batteries');
+        if (!batteriesResponse.ok) throw new Error('Failed to fetch batteries');
+        const batteriesData = await batteriesResponse.json();
+        setBatteries(batteriesData);
+
+        if (batteriesData.length > 0) {
+          const chartResponse = await fetch(`http://localhost:4000/api/batteries/${batteriesData[0].id}/historical?metric=voltage`);
+          if (!chartResponse.ok) throw new Error('Failed to fetch chart data');
+          const chartData = await chartResponse.json();
+          setChartData(chartData);
+        }
+
+        // TODO: Replace with a real alerts API endpoint
+        const allAlerts = getActiveAlerts();
+        const userAlerts = allAlerts.filter(alert =>
+          batteriesData.some(battery => battery.id === alert.batteryId)
+        );
+        setAlerts(userAlerts);
+
+      } catch (err) {
+        setError(err.message);
+        console.error("Error fetching data:", err);
+      } finally {
+        setLoading(false);
       }
     }
-  }, [demo, sampleBatteries, sampleAlerts, sampleUser, user.id]);
+
+    if (user || demo) {
+      fetchData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [demo, sampleBatteries, sampleAlerts, sampleUser, user?.id]);
 
   const handleViewBatteryDetails = (batteryId) => {
     if (!demo) navigate(`/battery/${batteryId}`);
@@ -81,142 +105,156 @@ export default function UserDashboard({ demo, sampleUser = {}, sampleBatteries =
         <Header onMenuClick={() => setSidebarOpen(true)} />
         
         <main className="flex-1 overflow-auto p-6 space-y-6">
-          {/* Welcome Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-2"
-          >
-            <h1 className="text-3xl font-bold">Welcome back, {user.name}!</h1>
-            <p className="text-muted-foreground">
-              Here's an overview of your battery systems
-            </p>
-          </motion.div>
-
-          {/* Alerts */}
-          {alerts.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.1 }}
-            >
-              <Alert variant={alerts.some(a => a.severity === 'critical') ? 'destructive' : 'default'}>
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Active Alerts</AlertTitle>
-                <AlertDescription>
-                  You have {alerts.length} active alert{alerts.length !== 1 ? 's' : ''} requiring attention.
-                </AlertDescription>
-              </Alert>
-            </motion.div>
-          )}
-
-          {/* Metrics Grid */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-          >
-            <MetricCard
-              title="Total Batteries"
-              value={totalBatteries}
-              icon={Battery}
-              gradient="from-blue-500 to-blue-600"
-            />
-            <MetricCard
-              title="Online"
-              value={onlineBatteries}
-              unit={`/ ${totalBatteries}`}
-              icon={Zap}
-              trend="up"
-              trendValue="+2"
-              gradient="from-green-500 to-green-600"
-            />
-            <MetricCard
-              title="Avg Health"
-              value={avgHealth}
-              unit="%"
-              icon={Activity}
-              trend={avgHealth > 80 ? 'up' : avgHealth > 60 ? 'stable' : 'down'}
-              trendValue={avgHealth > 80 ? '+5%' : avgHealth > 60 ? '0%' : '-3%'}
-              gradient="from-purple-500 to-purple-600"
-            />
-            <MetricCard
-              title="Critical Alerts"
-              value={criticalAlerts}
-              icon={AlertTriangle}
-              gradient="from-red-500 to-red-600"
-            />
-          </motion.div>
-
-          {/* Charts and Map */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <BatteryChart
-                data={chartData}
-                title="Voltage Trends (24h)"
-                dataKey="voltage"
-                color="#3b82f6"
-                type="area"
-              />
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              <BatteryMap batteries={batteries} />
-            </motion.div>
-          </div>
-
-          {/* Battery Grid */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="space-y-4"
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold">Your Batteries</h2>
-              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                <MapPin className="w-4 h-4" />
-                <span>{batteries.length} batteries tracked</span>
-              </div>
+          {loading ? (
+            <div className="flex justify-center items-center h-full">
+              <p className="text-lg">Loading dashboard...</p>
             </div>
+          ) : error ? (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          ) : (
+            <>
+              {/* Welcome Section */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-2"
+              >
+                <h1 className="text-3xl font-bold">Welcome back, {user.name}!</h1>
+                <p className="text-muted-foreground">
+                  Here's an overview of your battery systems
+                </p>
+              </motion.div>
 
-            {batteries.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {batteries.map((battery, index) => (
-                  <motion.div
-                    key={battery.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.6 + index * 0.1 }}
-                  >
-                    <BatteryCard
-                      battery={battery}
-                      onViewDetails={handleViewBatteryDetails}
-                    />
-                  </motion.div>
-                ))}
+              {/* Alerts */}
+              {alerts.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  <Alert variant={alerts.some(a => a.severity === 'critical') ? 'destructive' : 'default'}>
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>Active Alerts</AlertTitle>
+                    <AlertDescription>
+                      You have {alerts.length} active alert{alerts.length !== 1 ? 's' : ''} requiring attention.
+                    </AlertDescription>
+                  </Alert>
+                </motion.div>
+              )}
+
+              {/* Metrics Grid */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+              >
+                <MetricCard
+                  title="Total Batteries"
+                  value={totalBatteries}
+                  icon={Battery}
+                  gradient="from-blue-500 to-blue-600"
+                />
+                <MetricCard
+                  title="Online"
+                  value={onlineBatteries}
+                  unit={`/ ${totalBatteries}`}
+                  icon={Zap}
+                  trend="up"
+                  trendValue="+2"
+                  gradient="from-green-500 to-green-600"
+                />
+                <MetricCard
+                  title="Avg Health"
+                  value={avgHealth}
+                  unit="%"
+                  icon={Activity}
+                  trend={avgHealth > 80 ? 'up' : avgHealth > 60 ? 'stable' : 'down'}
+                  trendValue={avgHealth > 80 ? '+5%' : avgHealth > 60 ? '0%' : '-3%'}
+                  gradient="from-purple-500 to-purple-600"
+                />
+                <MetricCard
+                  title="Critical Alerts"
+                  value={criticalAlerts}
+                  icon={AlertTriangle}
+                  gradient="from-red-500 to-red-600"
+                />
+              </motion.div>
+
+              {/* Charts and Map */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  <BatteryChart
+                    data={chartData}
+                    title="Voltage Trends (24h)"
+                    dataKey="voltage"
+                    color="#3b82f6"
+                    type="area"
+                  />
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4 }}
+                >
+                  <BatteryMap batteries={batteries} />
+                </motion.div>
               </div>
-            ) : (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <Battery className="w-12 h-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No Batteries Found</h3>
-                  <p className="text-muted-foreground text-center">
-                    You don't have any batteries registered yet. Contact your administrator to add batteries to your account.
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </motion.div>
+
+              {/* Battery Grid */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="space-y-4"
+              >
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold">Your Batteries</h2>
+                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                    <MapPin className="w-4 h-4" />
+                    <span>{batteries.length} batteries tracked</span>
+                  </div>
+                </div>
+
+                {batteries.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {batteries.map((battery, index) => (
+                      <motion.div
+                        key={battery.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.6 + index * 0.1 }}
+                      >
+                        <BatteryCard
+                          battery={battery}
+                          onViewDetails={handleViewBatteryDetails}
+                        />
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : (
+                  <Card>
+                    <CardContent className="flex flex-col items-center justify-center py-12">
+                      <Battery className="w-12 h-12 text-muted-foreground mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">No Batteries Found</h3>
+                      <p className="text-muted-foreground text-center">
+                        You don't have any batteries registered yet. Contact your administrator to add batteries to your account.
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+              </motion.div>
+            </>
+          )}
         </main>
       </div>
     </div>
