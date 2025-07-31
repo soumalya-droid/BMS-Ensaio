@@ -1,0 +1,30 @@
+All Faults,Enum,Unnamed: 2,Unnamed: 3,All Alarms,Enum.1,Unnamed: 6,Unnamed: 7,Bootup Reason,Enum.2
+,,,,,,,,,
+NoneFault,0.0,,,NoneFault,0.0,,,ApplicationReset,0.0
+OverPackVoltageFault,1.0,,,OverPackVoltageAlarm,1.0,,,    FirmwareUpdate,1.0
+OverPackVoltage,2.0,,,UnderPackVoltageAlarm,2.0,,,    LocalReset,2.0
+UnderPackVoltageFault,3.0,,,OverChargeCurrentAlarma,3.0,,,    PowerUp,3.0
+OverOCD1Current,4.0,,,OverDisChargeCurrentAlarma,4.0,,,    RemoteReset,4.0
+OverOCD2Current,5.0,,,CellUnderTempAlarma,5.0,,,    ScheduledReset,5.0
+OverChargeCurrent,6.0,,,CellOverTempAlarma,6.0,,,    Triggered,6.0
+OverDisChargeCurrent,7.0,,,PDUOverTempAlarma,7.0,,,    Unknown,7.0
+ShortCircuit,8.0,,,UnderCellVoltageAlarma,8.0,,,    Watchdog,8.0
+CellOpenWireFault,9.0,,,OverCellVoltageAlarma,9.0,,,,
+VoltageReferenceFault,10.0,,,CellUnBalProAlarm,10.0,,,,
+VoltageRegulatorFault,11.0,,,FullChargeAlarm,11.0,,,,
+TemperatureMultiplexerError,12.0,,,FullDischargeAlarm,12.0,,,,
+UnderTempFault,13.0,,,ReachReserve1Alarm,13.0,,,,
+PDUOverTempFault,14.0,,,ReachReserve2Alarm,14.0,,,,
+OscillatorFault,15.0,,,,,,,,
+WatchdogTimeoutFault,16.0,,,,,,,,
+UnderCellVoltageFault,17.0,,,,,,,,
+OverCellVoltageFault,18.0,,,,,,,,
+OpenWireFault,19.0,,,,,,,,
+OverTempFault,20.0,,,,,,,,
+CellUnBalPro,21.0,,,,,,,,
+SCDLatchHigh,22.0,,,,,,,,
+SPI Communication Fault,23.0,,,,,,,,
+I2C Communication Fault,24.0,,,,,,,,
+MCU Reset Fault,25.0,,,,,,,,
+Data CRC Error Fault,26.0,,,,,,,,
+Data Ready Fault,27.0,,,,,,,,

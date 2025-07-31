@@ -177,18 +177,23 @@ export const generateHistoricalData = (batteryId, dataType, hours = 24) => {
   const data = [];
   const now = new Date();
   
+  let baseVoltage = 12.4; // Start at a typical value
+  let drift = (Math.random() - 0.5) * 0.1; // Gentle drift for the whole period
   for (let i = hours; i >= 0; i--) {
     const time = new Date(now.getTime() - (i * 60 * 60 * 1000));
     const timeStr = time.toLocaleTimeString('en-US', { 
       hour: '2-digit', 
       minute: '2-digit' 
     });
-    
     let value;
     switch (dataType) {
-      case 'voltage':
-        value = 11.5 + Math.random() * 1.5 + Math.sin(i / 4) * 0.3;
+      case 'voltage': {
+        // Gentle daily sine wave, small drift, and minor random noise
+        const sine = Math.sin((2 * Math.PI * i) / 24) * 0.08; // gentle 24h cycle
+        const noise = (Math.random() - 0.5) * 0.03; // very minor noise
+        value = baseVoltage + drift * (hours - i) + sine + noise;
         break;
+      }
       case 'temperature':
         value = 20 + Math.random() * 15 + Math.sin(i / 6) * 5;
         break;
@@ -201,10 +206,9 @@ export const generateHistoricalData = (batteryId, dataType, hours = 24) => {
       default:
         value = Math.random() * 100;
     }
-    
     data.push({
       time: timeStr,
-      [dataType]: Math.round(value * 10) / 10
+      [dataType]: Math.round(value * 100) / 100
     });
   }
   

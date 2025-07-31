@@ -1,0 +1,18 @@
+IoT Bootup Packet,Unnamed: 1,Unnamed: 2,Unnamed: 3
+,Details,Type,
+{,,,
+"  ""did"" : ""ABT860987058128056"",",Device id = ABT + IMEI,String,
+"  ""tms"" : ""2022-10-21T15:45:23+0530"",",Timestamp,String,
+"  ""evc"" : ""476"",",Event code,String,
+"  ""dvt"" : ""smart_battery"",",Device type,String,
+"  ""ext"" : [ {",,,
+"    ""tms"" : ""2022-10-21T15:45:23+0530"",",Timestamp,String,
+"    ""did"" : ""ABT860987058128056"",",Device id = ABT + IMEI,String,
+"    ""epochtime"" : 1666347323,",Epoch time,Integer,
+"    ""bootUpModuleValue"" : {",,,
+"      ""firmwareVersion"" : ""ABT-A0-1.5.0"",",IoT Firmware Version,String,
+"      ""hardwareVersion"" : ""PC80-60189748 v1.0"",",IoT Hardware Version,String,
+"      ""bootUpReason"" : 3",IoT Bootup Reason,Integer,Check ENUM List for bootup Reason enum
+    },,,
+  } ],,,
+},,,

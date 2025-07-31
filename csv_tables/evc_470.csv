@@ -1,0 +1,18 @@
+BMS Identification Packet,Unnamed: 1,Unnamed: 2
+,Details,Type
+{,,
+"  ""did"" : ""ABT860987058128056"",",Device id = ABT + IMEI,String
+"  ""tms"" : ""2022-10-21T15:45:31+0530"",",Timestamp,String
+"  ""evc"" : ""470"",",Event code,String
+"  ""dvt"" : ""smart_battery"",",Device type,String
+"  ""ext"" : [ {",,
+"    ""tms"" : ""2022-10-21T15:45:31+0530"",",Timestamp,String
+"    ""eventID"" : ""BIN"",",,
+"    ""data"" : {",,
+"      ""batteryNumber"" : ""ADIT1234"",",Battery Number ,String
+"      ""firmwareVersion"" : ""A1.3.177"",",BMS Firmware Version,String
+"      ""hardwareVersion"" : ""1.3--2.6"",",BMS Hardware Version,String
+"      ""bmsConfigVersion"" : ""50870""",BMS Config Version,String
+    },,
+  } ],,
+},,

@@ -1,0 +1,17 @@
+BMS Fault Packet,Unnamed: 1,Unnamed: 2,Unnamed: 3
+,Details,Type,
+{,,,
+"    ""did"": ""ABT860987058128056"",",Device id = ABT + IMEI,String,
+"    ""tms"": ""2022-10-21T15:45:23+0530"",",Timestamp,String,
+"    ""evc"": ""474"",",Event code,String,
+"    ""dvt"": ""smart_battery"",",Device type,String,
+"    ""ext"": [",,,
+        {,,,
+"            ""tms"": ""2022-10-21T15:45:23+0530"",",Timestamp,String,
+"            ""did"": ""ABT860987058128056"",",Device id = ABT + IMEI,String,
+"            ""bmsId"": ""SN16S50"",",BMS Identification No,String,
+"            ""epochtime"": 1666347323,",Epoch time,Integer,
+"            ""bmsFault"": 0",BMS Fault,Integer,Check ENUM List for fault enum
+        },,,
+    ],,,
+},,,
