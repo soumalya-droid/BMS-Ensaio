@@ -41,9 +41,42 @@ const CustomMarker = ({ battery }) => {
 };
 
 export default function BatteryMap({ batteries }) {
-  const center = batteries.length > 0
-    ? [batteries[0].latitude, batteries[0].longitude]
-    : [40.7128, -74.0060]; // Default center
+  if (batteries.length === 0) {
+    return (
+      <Card className="h-full">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <MapPin className="w-5 h-5" />
+            <span>Battery Locations</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-96 w-full flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
+            <p className="text-muted-foreground">No battery data to display on map.</p>
+          </div>
+          <div className="mt-4 flex items-center justify-between text-sm">
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-1">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span>Online</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                <span>Warning</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                <span>Offline</span>
+              </div>
+            </div>
+            <span className="text-muted-foreground">0 batteries tracked</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const center = [batteries[0].latitude, batteries[0].longitude];
 
   return (
     <Card className="h-full">
@@ -55,7 +88,7 @@ export default function BatteryMap({ batteries }) {
       </CardHeader>
       <CardContent>
         <div className="h-96 w-full">
-          <MapContainer center={center} zoom={4} scrollWheelZoom={false} style={{ height: '100%', width: '100%' }}>
+          <MapContainer center={center} zoom={4} scrollWheelZoom={false} style={{ height: '100%', width: '100%' }} key={batteries.length}>
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
