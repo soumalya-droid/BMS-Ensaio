@@ -74,7 +74,8 @@ export default function UserDashboard({ demo, sampleUser = {}, sampleBatteries =
     if (user || demo) {
       fetchData();
     }
-  }, [demo, sampleBatteries, sampleAlerts, sampleUser, user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [demo, sampleBatteries, sampleAlerts, sampleUser]);
 
   const handleViewBatteryDetails = (batteryId) => {
     if (!demo) navigate(`/battery/${batteryId}`);
