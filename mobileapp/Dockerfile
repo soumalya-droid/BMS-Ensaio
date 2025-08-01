@@ -1,5 +1,5 @@
-# Use OpenJDK 11 as the base image, which is required for modern Android builds.
-FROM openjdk:11-jdk
+# Use OpenJDK 17 as the base image, which is required for the latest Android SDK tools.
+FROM openjdk:17-jdk
 
 # Set environment variables for Android SDK
 ENV ANDROID_SDK_ROOT=/opt/android-sdk
