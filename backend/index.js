@@ -42,47 +42,64 @@ app.post('/api/login', async (req, res) => {
 });
 
 // Middleware to verify JWT
-const authenticateToken = (req, res, next) => {
+const authenticateToken = async (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
   if (token == null) return res.sendStatus(401);
 
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+  jwt.verify(token, process.env.JWT_SECRET, async (err, user) => {
     if (err) return res.sendStatus(403);
-    req.user = user;
-    next();
+    try {
+      const dbUser = await pool.query('SELECT id, name, email, role FROM users WHERE id = $1', [user.id]);
+      if (dbUser.rows.length === 0) return res.sendStatus(403);
+      req.user = dbUser.rows[0];
+      next();
+    } catch (dbError) {
+      res.sendStatus(500);
+    }
   });
 };
 
-// Get all batteries for a specific user
+// Get all batteries for a specific user or all batteries for an admin
 app.get('/api/batteries', authenticateToken, async (req, res) => {
-  const userId = req.user.id;
+  const { id: userId, role } = req.user;
 
   try {
-    const result = await pool.query(`
-      SELECT DISTINCT ON (bms.device_id)
-        bms.device_id as id,
-        bms.pack_voltage,
-        bms.soc,
-        bms.soh,
-        bms.cycle_count,
-        bms.cell_temps,
-        bms.timestamp as last_update,
-        gps.gps_lat_coordinate as latitude,
-        gps.gps_long_coordinate as longitude
-      FROM bms_values bms
-      INNER JOIN bms_identification bi ON bms.device_id = bi.device_id
-      LEFT JOIN (
-        SELECT DISTINCT ON (device_id)
-          device_id,
-          gps_lat_coordinate,
-          gps_long_coordinate
-        FROM iot_gps
-        ORDER BY device_id, timestamp DESC
-      ) gps ON bms.device_id = gps.device_id
-      WHERE bi.user_id = $1
-      ORDER BY bms.device_id, bms.timestamp DESC
-    `, [userId]);
+    let query;
+    let queryParams = [];
+
+    if (role === 'admin') {
+      query = `
+        SELECT DISTINCT ON (bms.device_id)
+          bms.device_id as id, bms.pack_voltage, bms.soc, bms.soh, bms.cycle_count,
+          bms.cell_temps, bms.timestamp as last_update,
+          gps.gps_lat_coordinate as latitude, gps.gps_long_coordinate as longitude
+        FROM bms_values bms
+        LEFT JOIN (
+          SELECT DISTINCT ON (device_id) device_id, gps_lat_coordinate, gps_long_coordinate
+          FROM iot_gps ORDER BY device_id, timestamp DESC
+        ) gps ON bms.device_id = gps.device_id
+        ORDER BY bms.device_id, bms.timestamp DESC
+      `;
+    } else {
+      query = `
+        SELECT DISTINCT ON (bms.device_id)
+          bms.device_id as id, bms.pack_voltage, bms.soc, bms.soh, bms.cycle_count,
+          bms.cell_temps, bms.timestamp as last_update,
+          gps.gps_lat_coordinate as latitude, gps.gps_long_coordinate as longitude
+        FROM bms_values bms
+        INNER JOIN bms_identification bi ON bms.device_id = bi.device_id
+        LEFT JOIN (
+          SELECT DISTINCT ON (device_id) device_id, gps_lat_coordinate, gps_long_coordinate
+          FROM iot_gps ORDER BY device_id, timestamp DESC
+        ) gps ON bms.device_id = gps.device_id
+        WHERE bi.user_id = $1
+        ORDER BY bms.device_id, bms.timestamp DESC
+      `;
+      queryParams.push(userId);
+    }
+
+    const result = await pool.query(query, queryParams);
 
     const batteries = result.rows.map(b => ({
       id: b.id,
