@@ -58,9 +58,5 @@ RUN npm install
 # The --save flag is not necessary for modern cordova versions
 RUN cordova platform add android@12.0.1
 
-# Build the Android application (release version)
-RUN cordova build android --release
-
-# The APK will be generated in /app/platforms/android/app/build/outputs/apk/release/
-# The user will be instructed to use a volume to get the APK.
-CMD ["echo", "Build complete. APK is in platforms/android/app/build/outputs/apk/release/"]
+# Keep the container running indefinitely.
+CMD ["tail", "-f", "/dev/null"]
