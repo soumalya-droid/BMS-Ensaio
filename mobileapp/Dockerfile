@@ -2,15 +2,22 @@
 # We use the -slim variant which is based on Debian and includes apt-get.
 FROM openjdk:17-jdk-slim
 
-# Set environment variables for Android SDK
+# Set environment variables for Android SDK and Gradle
 ENV ANDROID_SDK_ROOT=/opt/android-sdk
 ENV ANDROID_HOME=/opt/android-sdk
-ENV PATH=$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools
+ENV GRADLE_HOME=/opt/gradle
+ENV PATH=$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$GRADLE_HOME/bin
 
 # Install necessary system packages, including wget, unzip, and git.
 RUN apt-get update && \
     apt-get install -y wget unzip git && \
     rm -rf /var/lib/apt/lists/*
+
+# Install Gradle
+RUN wget -O gradle.zip "https://services.gradle.org/distributions/gradle-8.1.1-bin.zip" && \
+    unzip gradle.zip -d /opt && \
+    mv /opt/gradle-8.1.1 $GRADLE_HOME && \
+    rm gradle.zip
 
 # Install Node.js and npm
 RUN apt-get update && \
