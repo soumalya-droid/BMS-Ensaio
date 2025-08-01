@@ -21,14 +21,11 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Download and install Android SDK command-line tools
-RUN mkdir -p $ANDROID_SDK_ROOT && \
-    wget -O android-sdk.zip "https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip" && \
-    unzip android-sdk.zip -d $ANDROID_SDK_ROOT && \
+RUN wget -O android-sdk.zip "https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip" && \
+    unzip android-sdk.zip && \
     rm android-sdk.zip && \
-    # The unzipped directory is called `cmdline-tools`. We rename it to `latest`
-    # to match the expected path structure.
     mkdir -p $ANDROID_SDK_ROOT/cmdline-tools && \
-    mv $ANDROID_SDK_ROOT/cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
+    mv cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
 
 # Accept Android SDK licenses
 RUN yes | sdkmanager --licenses
