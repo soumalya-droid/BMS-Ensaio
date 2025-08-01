@@ -12,15 +12,21 @@ import {
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
+const lineColors = ["#3b82f6", "#f59e0b", "#10b981", "#8b5cf6"];
+
 export default function BatteryChart({ data, title, dataKey, color = "#3b82f6", type = "line" }) {
+  const dataKeys = Array.isArray(dataKey) ? dataKey : [dataKey];
+
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
           <p className="text-sm font-medium">{`Time: ${label}`}</p>
-          <p className="text-sm" style={{ color: payload[0].color }}>
-            {`${title}: ${payload[0].value}${dataKey.includes('temperature') ? '°C' : dataKey.includes('voltage') ? 'V' : '%'}`}
-          </p>
+          {payload.map((p, i) => (
+            <p key={i} className="text-sm" style={{ color: p.color }}>
+              {`${p.name}: ${p.value}${title.includes('Temp') ? '°C' : title.includes('Voltage') ? 'V' : '%'}`}
+            </p>
+          ))}
         </div>
       );
     }
@@ -38,52 +44,48 @@ export default function BatteryChart({ data, title, dataKey, color = "#3b82f6", 
             {type === "area" ? (
               <AreaChart data={data}>
                 <defs>
-                  <linearGradient id={`gradient-${dataKey}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={color} stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor={color} stopOpacity={0}/>
-                  </linearGradient>
+                  {dataKeys.map((key, i) => (
+                    <linearGradient id={`gradient-${key}`} x1="0" y1="0" x2="0" y2="1" key={i}>
+                      <stop offset="5%" stopColor={color || lineColors[i % lineColors.length]} stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor={color || lineColors[i % lineColors.length]} stopOpacity={0}/>
+                    </linearGradient>
+                  ))}
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                <XAxis 
-                  dataKey="time" 
-                  className="text-xs"
-                  tick={{ fontSize: 12 }}
-                />
-                <YAxis 
-                  className="text-xs"
-                  tick={{ fontSize: 12 }}
-                />
+                <XAxis dataKey="time" className="text-xs" tick={{ fontSize: 12 }}/>
+                <YAxis className="text-xs" tick={{ fontSize: 12 }}/>
                 <Tooltip content={<CustomTooltip />} />
-                <Area
-                  type="monotone"
-                  dataKey={dataKey}
-                  stroke={color}
-                  fillOpacity={1}
-                  fill={`url(#gradient-${dataKey})`}
-                  strokeWidth={2}
-                />
+                {dataKeys.map((key, i) => (
+                  <Area
+                    key={i}
+                    type="monotone"
+                    dataKey={key}
+                    stroke={color || lineColors[i % lineColors.length]}
+                    fillOpacity={1}
+                    fill={`url(#gradient-${key})`}
+                    strokeWidth={2}
+                    name={key}
+                  />
+                ))}
               </AreaChart>
             ) : (
               <LineChart data={data}>
                 <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                <XAxis 
-                  dataKey="time" 
-                  className="text-xs"
-                  tick={{ fontSize: 12 }}
-                />
-                <YAxis 
-                  className="text-xs"
-                  tick={{ fontSize: 12 }}
-                />
+                <XAxis dataKey="time" className="text-xs" tick={{ fontSize: 12 }}/>
+                <YAxis className="text-xs" tick={{ fontSize: 12 }}/>
                 <Tooltip content={<CustomTooltip />} />
-                <Line
-                  type="monotone"
-                  dataKey={dataKey}
-                  stroke={color}
-                  strokeWidth={2}
-                  dot={{ fill: color, strokeWidth: 2, r: 4 }}
-                  activeDot={{ r: 6, stroke: color, strokeWidth: 2 }}
-                />
+                {dataKeys.map((key, i) => (
+                  <Line
+                    key={i}
+                    type="monotone"
+                    dataKey={key}
+                    stroke={color || lineColors[i % lineColors.length]}
+                    strokeWidth={2}
+                    dot={false}
+                    activeDot={{ r: 6 }}
+                    name={key}
+                  />
+                ))}
               </LineChart>
             )}
           </ResponsiveContainer>

@@ -136,7 +136,7 @@ export default function Header({ onMenuClick, searchQuery, setSearchQuery, demo 
                       {n.type === 'alarm' ? <AlertCircle className="w-5 h-5 text-yellow-500" /> : <AlertCircle className="w-5 h-5 text-red-500" />}
                       <div>
                         <p className={`font-medium ${!n.read ? 'text-foreground' : 'text-muted-foreground'}`}>
-                          {n.type.charAt(0).toUpperCase() + n.type.slice(1)} Code: {n.code}
+                          {`Device ${n.device_id}: ${n.description}`}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {new Date(n.timestamp).toLocaleString()}

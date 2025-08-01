@@ -148,24 +148,31 @@ app.get('/api/batteries/:id/historical', async (req, res) => {
       [id]
     );
 
-    const chartData = result.rows.map(row => {
-      let value;
-      if (metric === 'temperature' && Array.isArray(row.value)) {
-        value = row.value.length > 0
-          ? Math.round(row.value.reduce((a, b) => a + b, 0) / row.value.length)
-          : 0;
-      } else {
-        value = row.value;
-      }
+    let chartData;
 
-      return {
+    if (metric === 'temperature') {
+      chartData = result.rows.map(row => {
+        const time = new Date(row.timestamp).toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+        const record = { time };
+        if (Array.isArray(row.value)) {
+          row.value.forEach((temp, i) => {
+            record[`temp${i + 1}`] = temp;
+          });
+        }
+        return record;
+      });
+    } else {
+      chartData = result.rows.map(row => ({
         time: new Date(row.timestamp).toLocaleTimeString('en-US', {
           hour: '2-digit',
           minute: '2-digit',
         }),
-        [metric]: value,
-      };
-    });
+        [metric]: row.value,
+      }));
+    }
 
     res.json(chartData);
   } catch (err) {
@@ -241,7 +248,7 @@ app.get('/api/batteries/:id/logs', async (req, res) => {
         a.id,
         a.timestamp,
         'alarm' as "eventType",
-        ae.name as description,
+        COALESCE(ae.name, 'Unknown alarm code') as description,
         a.bms_alarm as value
       FROM bms_alarm a
       LEFT JOIN bms_alarm_enum ae ON a.bms_alarm = ae.value
@@ -251,7 +258,7 @@ app.get('/api/batteries/:id/logs', async (req, res) => {
         f.id,
         f.timestamp,
         'fault' as "eventType",
-        fe.name as description,
+        COALESCE(fe.name, 'Unknown fault code') as description,
         f.bms_fault as value
       FROM bms_fault f
       LEFT JOIN bms_fault_enum fe ON f.bms_fault = fe.value
@@ -316,9 +323,13 @@ app.get('/api/batteries/:id/route', async (req, res) => {
 app.get('/api/notifications', async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT id, timestamp, 'alarm' as type, bms_alarm as code, read FROM bms_alarm
+      SELECT a.id, a.device_id, a.timestamp, 'alarm' as type, a.bms_alarm as code, a.read, COALESCE(ae.name, 'Unknown alarm code') as description
+      FROM bms_alarm a
+      LEFT JOIN bms_alarm_enum ae ON a.bms_alarm = ae.value
       UNION ALL
-      SELECT id, timestamp, 'fault' as type, bms_fault as code, read FROM bms_fault
+      SELECT f.id, f.device_id, f.timestamp, 'fault' as type, f.bms_fault as code, f.read, COALESCE(fe.name, 'Unknown fault code') as description
+      FROM bms_fault f
+      LEFT JOIN bms_fault_enum fe ON f.bms_fault = fe.value
       ORDER BY timestamp DESC
       LIMIT 50
     `);

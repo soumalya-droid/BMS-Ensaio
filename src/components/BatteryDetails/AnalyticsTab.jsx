@@ -15,8 +15,7 @@ const AnalyticsTab = ({ voltageData, temperatureData, healthData, chargeData }) 
       <BatteryChart
         data={temperatureData}
         title="Temperature Trends (24h)"
-        dataKey="temperature"
-        color="#f59e0b"
+        dataKey={['temp1', 'temp2', 'temp3', 'temp4']}
         type="line"
       />
     </div>
