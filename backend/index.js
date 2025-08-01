@@ -54,8 +54,10 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// Get all batteries with their latest values
-app.get('/api/batteries', async (req, res) => {
+// Get all batteries for a specific user
+app.get('/api/batteries', authenticateToken, async (req, res) => {
+  const userId = req.user.id;
+
   try {
     const result = await pool.query(`
       SELECT DISTINCT ON (bms.device_id)
@@ -69,6 +71,7 @@ app.get('/api/batteries', async (req, res) => {
         gps.gps_lat_coordinate as latitude,
         gps.gps_long_coordinate as longitude
       FROM bms_values bms
+      INNER JOIN user_batteries ub ON bms.device_id = ub.device_id
       LEFT JOIN (
         SELECT DISTINCT ON (device_id)
           device_id,
@@ -77,8 +80,9 @@ app.get('/api/batteries', async (req, res) => {
         FROM iot_gps
         ORDER BY device_id, timestamp DESC
       ) gps ON bms.device_id = gps.device_id
+      WHERE ub.user_id = $1
       ORDER BY bms.device_id, bms.timestamp DESC
-    `);
+    `, [userId]);
 
     const batteries = result.rows.map(b => ({
       id: b.id,

@@ -32,7 +32,7 @@ export default function UserDashboard({ demo, sampleUser = {}, sampleBatteries =
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { user } = demo ? { user: sampleUser } : useAuth();
+  const { user, token } = demo ? { user: sampleUser, token: 'sample-token' } : useAuth();
   const navigate = demo ? () => {} : useNavigate();
 
   useEffect(() => {
@@ -45,10 +45,23 @@ export default function UserDashboard({ demo, sampleUser = {}, sampleBatteries =
         return;
       }
 
+      if (!token) {
+        setLoading(false);
+        setError("Authentication token not found. Please log in again.");
+        return;
+      }
+
       try {
         setLoading(true);
-        const batteriesResponse = await fetch('http://localhost:4000/api/batteries');
-        if (!batteriesResponse.ok) throw new Error('Failed to fetch batteries');
+        const batteriesResponse = await fetch('http://localhost:4000/api/batteries', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!batteriesResponse.ok) {
+          if (batteriesResponse.status === 401 || batteriesResponse.status === 403) {
+            throw new Error('Authentication failed. Please log in again.');
+          }
+          throw new Error('Failed to fetch batteries');
+        }
         const batteriesData = await batteriesResponse.json();
         setBatteries(batteriesData);
 

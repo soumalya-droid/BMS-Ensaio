@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS bms_values (
     ignition_state INTEGER,
     pdu_power_rail INTEGER,
     status_pin INTEGER,
-    last_fault INTEGER,
+    last__fault INTEGER,
     last_alarm INTEGER,
     cell_temps INTEGER[]
 );
@@ -116,4 +116,21 @@ CREATE TABLE IF NOT EXISTS bootup_reason_enum (
     id SERIAL PRIMARY KEY,
     name VARCHAR(64),
     value INTEGER
+);
+
+-- Users table
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    role VARCHAR(50) DEFAULT 'user',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- User-Batteries join table
+CREATE TABLE IF NOT EXISTS user_batteries (
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    device_id VARCHAR(32),
+    PRIMARY KEY (user_id, device_id)
 );

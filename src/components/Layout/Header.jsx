@@ -65,6 +65,13 @@ export default function Header({ onMenuClick }) {
     });
   };
 
+  const handleSearch = () => {
+    toast({
+      title: "🔎 Search",
+      description: "🚧 This feature isn't implemented yet—but don't worry! You can request it in your next prompt! 🚀",
+    });
+  };
+
   return (
     <motion.header
       initial={{ y: -20, opacity: 0 }}
@@ -124,7 +131,7 @@ export default function Header({ onMenuClick }) {
               )}
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80">
+          <DropdownMenuContent align="end" className="w-80 bg-muted">
             <DropdownMenuLabel>Notifications</DropdownMenuLabel>
             <DropdownMenuSeparator />
             {notifications.length > 0 ? (
