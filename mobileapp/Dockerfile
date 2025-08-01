@@ -40,7 +40,7 @@ RUN wget -O android-sdk.zip "https://dl.google.com/android/repository/commandlin
 RUN yes | sdkmanager --licenses
 
 # Install required Android SDK packages
-RUN sdkmanager "platforms;android-33" "build-tools;33.0.1" "platform-tools"
+RUN sdkmanager "platforms;android-33" "build-tools;33.0.2" "platform-tools"
 
 # Install Cordova CLI globally
 RUN npm install -g cordova
