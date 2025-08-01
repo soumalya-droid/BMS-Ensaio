@@ -1,5 +1,6 @@
 # Use OpenJDK 17 as the base image, which is required for the latest Android SDK tools.
-FROM openjdk:17-jdk
+# We use the -slim variant which is based on Debian and includes apt-get.
+FROM openjdk:17-jdk-slim
 
 # Set environment variables for Android SDK
 ENV ANDROID_SDK_ROOT=/opt/android-sdk
