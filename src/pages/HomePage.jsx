@@ -88,6 +88,7 @@ const HomePage = () => {
         <title>BMS - Powering Smarter Batteries. Smarter Businesses.</title>
         <meta name="description" content="A modern Battery Management System for real-time monitoring, analytics, and optimization. Perfect for EV fleets, energy storage, and more." />
       </Helmet>
+      <PWABanner />
       <HomepageHeader />
 
       <main>
