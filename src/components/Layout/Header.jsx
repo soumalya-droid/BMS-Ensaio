@@ -20,20 +20,27 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@radix-ui/react-dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useSearch } from '@/contexts/SearchContext';
 import { toast } from '@/components/ui/use-toast';
 
 export default function Header({ onMenuClick }) {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { setSearchQuery } = useSearch();
+  const [searchTerm, setSearchTerm] = useState('');
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     fetchNotifications();
   }, []);
+
+  const handleSearch = () => {
+    setSearchQuery(searchTerm);
+  };
 
   const fetchNotifications = async () => {
     try {
@@ -46,15 +53,33 @@ export default function Header({ onMenuClick }) {
       setUnreadCount(data.filter(n => !n.read).length);
     } catch (error) {
       console.error("Error fetching notifications:", error);
+      // Fallback to mock data for UI styling purposes
+      const mockNotifications = [
+        { id: 1, type: 'fault', code: 'F-45', read: false, timestamp: new Date().toISOString() },
+        { id: 2, type: 'alarm', code: 'A-12', read: false, timestamp: new Date().toISOString() },
+        { id: 3, type: 'fault', code: 'F-11', read: true, timestamp: new Date(Date.now() - 3600 * 1000).toISOString() },
+      ];
+      setNotifications(mockNotifications);
+      setUnreadCount(mockNotifications.filter(n => !n.read).length);
     }
   };
 
   const handleMarkAsRead = async (type, id) => {
+    // Optimistic update for better UX
+    const originalNotifications = [...notifications];
+    const newNotifications = notifications.map(n =>
+      n.id === id && n.type === type ? { ...n, read: true } : n
+    );
+    setNotifications(newNotifications);
+    setUnreadCount(prev => prev > 0 ? prev - 1 : 0);
+
     try {
       await fetch(`http://localhost:4000/api/notifications/${type}/${id}/read`, { method: 'POST' });
-      fetchNotifications(); // Refresh notifications
     } catch (error) {
       console.error("Error marking notification as read:", error);
+      // Revert on error
+      setNotifications(originalNotifications);
+      setUnreadCount(originalNotifications.filter(n => !n.read).length);
     }
   };
 
@@ -88,7 +113,11 @@ export default function Header({ onMenuClick }) {
             <Input
               placeholder="Search batteries, users, alerts..."
               className="pl-10"
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleSearch();
+              }}
             />
           </div>
         </div>
@@ -124,7 +153,10 @@ export default function Header({ onMenuClick }) {
               )}
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80">
+          <DropdownMenuContent
+            align="end"
+            className="w-80 bg-muted/95 backdrop-blur supports-[backdrop-filter]:bg-muted/60"
+          >
             <DropdownMenuLabel>Notifications</DropdownMenuLabel>
             <DropdownMenuSeparator />
             {notifications.length > 0 ? (

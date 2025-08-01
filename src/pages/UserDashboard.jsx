@@ -22,6 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSearch } from '@/contexts/SearchContext';
 import { getActiveAlerts } from '@/data/mockData'; // Keep for now
 
 export default function UserDashboard({ demo, sampleUser = {}, sampleBatteries = [], sampleAlerts = [] }) {
@@ -29,7 +30,7 @@ export default function UserDashboard({ demo, sampleUser = {}, sampleBatteries =
   const [batteries, setBatteries] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [chartData, setChartData] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const { searchQuery } = useSearch();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { user } = demo ? { user: sampleUser } : useAuth();
@@ -47,13 +48,18 @@ export default function UserDashboard({ demo, sampleUser = {}, sampleBatteries =
 
       try {
         setLoading(true);
-        const batteriesResponse = await fetch('http://localhost:4000/api/batteries');
+        const token = localStorage.getItem('bms_token');
+        const batteriesResponse = await fetch('http://localhost:4000/api/batteries', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
         if (!batteriesResponse.ok) throw new Error('Failed to fetch batteries');
         const batteriesData = await batteriesResponse.json();
         setBatteries(batteriesData);
 
         if (batteriesData.length > 0) {
-          const chartResponse = await fetch(`http://localhost:4000/api/batteries/${batteriesData[0].id}/historical?metric=voltage`);
+          const chartResponse = await fetch(`http://localhost:4000/api/batteries/${batteriesData[0].id}/historical?metric=voltage`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
           if (!chartResponse.ok) throw new Error('Failed to fetch chart data');
           const chartData = await chartResponse.json();
           setChartData(chartData);
@@ -85,9 +91,13 @@ export default function UserDashboard({ demo, sampleUser = {}, sampleBatteries =
   };
 
   // Calculate metrics
-  const filteredBatteries = batteries.filter(battery =>
-    battery.id.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredBatteries = batteries.filter(battery => {
+    const query = searchQuery.toLowerCase();
+    return (
+      battery.id.toLowerCase().includes(query) ||
+      (battery.name && battery.name.toLowerCase().includes(query))
+    );
+  });
   const totalBatteries = filteredBatteries.length;
   const onlineBatteries = batteries.filter(b => b.status === 'online').length;
   const avgHealth = batteries.length > 0 

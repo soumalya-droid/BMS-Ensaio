@@ -54,8 +54,8 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// Get all batteries with their latest values
-app.get('/api/batteries', async (req, res) => {
+// Get all batteries for the logged-in user
+app.get('/api/batteries', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT DISTINCT ON (bms.device_id)
@@ -69,6 +69,7 @@ app.get('/api/batteries', async (req, res) => {
         gps.gps_lat_coordinate as latitude,
         gps.gps_long_coordinate as longitude
       FROM bms_values bms
+      INNER JOIN user_batteries ub ON bms.device_id = ub.device_id
       LEFT JOIN (
         SELECT DISTINCT ON (device_id)
           device_id,
@@ -77,8 +78,9 @@ app.get('/api/batteries', async (req, res) => {
         FROM iot_gps
         ORDER BY device_id, timestamp DESC
       ) gps ON bms.device_id = gps.device_id
+      WHERE ub.user_id = $1
       ORDER BY bms.device_id, bms.timestamp DESC
-    `);
+    `, [req.user.id]);
 
     const batteries = result.rows.map(b => ({
       id: b.id,
@@ -103,7 +105,7 @@ app.get('/api/batteries', async (req, res) => {
 });
 
 // Get historical data for a specific battery
-app.get('/api/batteries/:id/historical', async (req, res) => {
+app.get('/api/batteries/:id/historical', authenticateToken, async (req, res) => {
   const { id } = req.params;
   const { metric } = req.query;
 
@@ -154,7 +156,7 @@ app.get('/api/batteries/:id/historical', async (req, res) => {
 });
 
 // Get a single battery's details
-app.get('/api/batteries/:id', async (req, res) => {
+app.get('/api/batteries/:id', authenticateToken, async (req, res) => {
   const { id } = req.params;
   try {
     const result = await pool.query(`
@@ -212,7 +214,7 @@ app.get('/api/batteries/:id', async (req, res) => {
 });
 
 // Get logs for a specific battery
-app.get('/api/batteries/:id/logs', async (req, res) => {
+app.get('/api/batteries/:id/logs', authenticateToken, async (req, res) => {
   const { id } = req.params;
   try {
     const result = await pool.query(`
@@ -246,7 +248,7 @@ app.get('/api/batteries/:id/logs', async (req, res) => {
 });
 
 // Export data for a specific battery as CSV
-app.get('/api/batteries/:id/export', async (req, res) => {
+app.get('/api/batteries/:id/export', authenticateToken, async (req, res) => {
   const { id } = req.params;
   try {
     const result = await pool.query('SELECT * FROM bms_values WHERE device_id = $1 ORDER BY timestamp DESC', [id]);
@@ -277,7 +279,7 @@ app.get('/api/batteries/:id/export', async (req, res) => {
 });
 
 // Get route data for a specific battery
-app.get('/api/batteries/:id/route', async (req, res) => {
+app.get('/api/batteries/:id/route', authenticateToken, async (req, res) => {
   const { id } = req.params;
   try {
     const result = await pool.query(
@@ -291,16 +293,24 @@ app.get('/api/batteries/:id/route', async (req, res) => {
   }
 });
 
-// Get all notifications
-app.get('/api/notifications', async (req, res) => {
+// Get all notifications (now user-specific)
+app.get('/api/notifications', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT id, timestamp, 'alarm' as type, bms_alarm as code, read FROM bms_alarm
-      UNION ALL
-      SELECT id, timestamp, 'fault' as type, bms_fault as code, read FROM bms_fault
+      SELECT id, timestamp, type, code, read FROM (
+        SELECT b.id, b.timestamp, 'alarm' as type, b.bms_alarm as code, b.read
+        FROM bms_alarm b
+        INNER JOIN user_batteries ub ON b.device_id = ub.device_id
+        WHERE ub.user_id = $1
+        UNION ALL
+        SELECT f.id, f.timestamp, 'fault' as type, f.bms_fault as code, f.read
+        FROM bms_fault f
+        INNER JOIN user_batteries ub ON f.device_id = ub.device_id
+        WHERE ub.user_id = $1
+      ) as notifications
       ORDER BY timestamp DESC
       LIMIT 50
-    `);
+    `, [req.user.id]);
     res.json(result.rows);
   } catch (err) {
     console.error(err);
@@ -308,8 +318,8 @@ app.get('/api/notifications', async (req, res) => {
   }
 });
 
-// Mark a notification as read
-app.post('/api/notifications/:type/:id/read', async (req, res) => {
+// Mark a notification as read (user-specific)
+app.post('/api/notifications/:type/:id/read', authenticateToken, async (req, res) => {
   const { type, id } = req.params;
   const table = type === 'alarm' ? 'bms_alarm' : 'bms_fault';
 
