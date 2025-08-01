@@ -21,12 +21,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@radix-ui/react-dropdown-menu"
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, useDemoAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { toast } from '@/components/ui/use-toast';
 
-export default function Header({ onMenuClick, searchQuery, setSearchQuery }) {
-  const { user, logout } = useAuth();
+export default function Header({ onMenuClick, searchQuery, setSearchQuery, demo = false }) {
+  const { user, logout } = demo ? useDemoAuth() : useAuth();
   const { theme, toggleTheme } = useTheme();
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);

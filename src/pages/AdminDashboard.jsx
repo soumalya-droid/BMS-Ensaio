@@ -90,7 +90,7 @@ export default function AdminDashboard({ demo, sampleUsers = [], sampleBatteries
       />
       
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header onMenuClick={() => setSidebarOpen(true)} />
+        <Header onMenuClick={() => setSidebarOpen(true)} demo={demo} />
         
         <main className="flex-1 overflow-auto p-6 space-y-6">
           {/* Admin Header */}

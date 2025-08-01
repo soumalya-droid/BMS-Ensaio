@@ -11,6 +11,11 @@ export function useAuth() {
   return context;
 }
 
+export const useDemoAuth = () => ({
+  user: { name: 'Demo User', role: 'user' },
+  logout: () => {},
+});
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
