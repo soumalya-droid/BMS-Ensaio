@@ -3,12 +3,6 @@ import { motion } from 'framer-motion';
 import { Battery, Zap, Thermometer, Activity } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
-const getBatteryLevel = (voltage) => {
-  const minVoltage = 10.5;
-  const maxVoltage = 12.6;
-  return Math.max(0, Math.min(100, ((voltage - minVoltage) / (maxVoltage - minVoltage)) * 100));
-};
-
 const Metric = ({ icon: Icon, title, value, unit, gradient }) => (
   <Card className="metric-card">
     <CardContent className="p-6">
@@ -38,7 +32,7 @@ const KeyMetrics = ({ battery }) => (
     <Metric icon={Zap} title="Voltage" value={battery.voltage} unit="V" gradient="from-blue-500 to-blue-600" />
     <Metric icon={Thermometer} title="Temperature" value={battery.temperature} unit="°C" gradient="from-orange-500 to-red-600" />
     <Metric icon={Activity} title="Health" value={battery.health} unit="%" gradient="from-green-500 to-green-600" />
-    <Metric icon={Battery} title="Charge Level" value={getBatteryLevel(battery.voltage).toFixed(0)} unit="%" gradient="from-purple-500 to-purple-600" />
+    <Metric icon={Battery} title="Charge Level" value={battery.stateOfCharge} unit="%" gradient="from-purple-500 to-purple-600" />
   </motion.div>
 );
 
