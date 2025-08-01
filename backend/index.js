@@ -60,6 +60,21 @@ const authenticateToken = async (req, res, next) => {
   });
 };
 
+// Get all users (admin only)
+app.get('/api/users', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Access denied. Admins only.' });
+  }
+
+  try {
+    const result = await pool.query('SELECT id, name, email, role, status, created_at FROM users ORDER BY id ASC');
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Error fetching users:", err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Get all batteries for a specific user or all batteries for an admin
 app.get('/api/batteries', authenticateToken, async (req, res) => {
   const { id: userId, role } = req.user;
@@ -313,18 +328,44 @@ app.get('/api/batteries/:id/route', async (req, res) => {
 });
 
 // Get all notifications
-app.get('/api/notifications', async (req, res) => {
+app.get('/api/notifications', authenticateToken, async (req, res) => {
+  const { id: userId, role } = req.user;
+
   try {
-    const result = await pool.query(`
-      SELECT id, timestamp, 'alarm' as type, bms_alarm as code, read FROM bms_alarm
-      UNION ALL
-      SELECT id, timestamp, 'fault' as type, bms_fault as code, read FROM bms_fault
-      ORDER BY timestamp DESC
-      LIMIT 50
-    `);
+    let query;
+    const queryParams = [];
+
+    if (role === 'admin') {
+      query = `
+        SELECT id, device_id, timestamp, 'alarm' as type, bms_alarm as code, read FROM bms_alarm
+        UNION ALL
+        SELECT id, device_id, timestamp, 'fault' as type, bms_fault as code, read FROM bms_fault
+        ORDER BY timestamp DESC
+        LIMIT 50
+      `;
+    } else {
+      query = `
+        SELECT * FROM (
+          SELECT a.id, a.device_id, a.timestamp, 'alarm' as type, a.bms_alarm as code, a.read
+          FROM bms_alarm a
+          INNER JOIN bms_identification bi ON a.device_id = bi.device_id
+          WHERE bi.user_id = $1
+          UNION ALL
+          SELECT f.id, f.device_id, f.timestamp, 'fault' as type, f.bms_fault as code, f.read
+          FROM bms_fault f
+          INNER JOIN bms_identification bi ON f.device_id = bi.device_id
+          WHERE bi.user_id = $1
+        ) as notifications
+        ORDER BY timestamp DESC
+        LIMIT 50
+      `;
+      queryParams.push(userId);
+    }
+
+    const result = await pool.query(query, queryParams);
     res.json(result.rows);
   } catch (err) {
-    console.error(err);
+    console.error("Error fetching notifications:", err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

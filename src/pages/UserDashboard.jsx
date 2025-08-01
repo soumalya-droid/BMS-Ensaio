@@ -22,7 +22,6 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
-import { getActiveAlerts } from '@/data/mockData'; // Keep for now
 
 export default function UserDashboard({ demo, sampleUser = {}, sampleBatteries = [], sampleAlerts = [], searchQuery = '', setSearchQuery = () => {} }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -71,12 +70,12 @@ export default function UserDashboard({ demo, sampleUser = {}, sampleBatteries =
           setChartData(chartData);
         }
 
-        // TODO: Replace with a real alerts API endpoint
-        const allAlerts = getActiveAlerts();
-        const userAlerts = allAlerts.filter(alert =>
-          batteriesData.some(battery => battery.id === alert.batteryId)
-        );
-        setAlerts(userAlerts);
+        const alertsResponse = await fetch('http://localhost:4000/api/notifications', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!alertsResponse.ok) throw new Error('Failed to fetch alerts');
+        const alertsData = await alertsResponse.json();
+        setAlerts(alertsData);
 
       } catch (err) {
         setError(err.message);
@@ -105,7 +104,7 @@ export default function UserDashboard({ demo, sampleUser = {}, sampleBatteries =
   const avgHealth = batteries.length > 0 
     ? Math.round(batteries.reduce((sum, b) => sum + b.health, 0) / batteries.length)
     : 0;
-  const criticalAlerts = alerts.filter(a => a.severity === 'critical').length;
+  const criticalAlerts = alerts.filter(a => a.type === 'fault').length;
 
   return (
     <div className="flex h-screen bg-background">
@@ -154,7 +153,7 @@ export default function UserDashboard({ demo, sampleUser = {}, sampleBatteries =
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.1 }}
                 >
-                  <Alert variant={alerts.some(a => a.severity === 'critical') ? 'destructive' : 'default'}>
+                  <Alert variant={alerts.some(a => a.type === 'fault') ? 'destructive' : 'default'}>
                     <AlertTriangle className="h-4 w-4" />
                     <AlertTitle>Active Alerts</AlertTitle>
                     <AlertDescription>
