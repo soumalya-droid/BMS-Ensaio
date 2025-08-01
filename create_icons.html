@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  color: white;
+  font-family: Arial, sans-serif;
+  font-weight: bold;
+  border-radius: 15%;
+}
+</style>
+</head>
+<body>
+<canvas id="canvas" width="512" height="512"></canvas>
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+// Create gradient background
+const gradient = ctx.createLinearGradient(0, 0, 512, 512);
+gradient.addColorStop(0, '#3b82f6');
+gradient.addColorStop(1, '#8b5cf6');
+
+ctx.fillStyle = gradient;
+ctx.fillRect(0, 0, 512, 512);
+
+// Add rounded corners effect
+ctx.globalCompositeOperation = 'destination-in';
+ctx.beginPath();
+ctx.roundRect(0, 0, 512, 512, 80);
+ctx.fill();
+ctx.globalCompositeOperation = 'source-over';
+
+// Add battery icon
+ctx.fillStyle = 'white';
+ctx.font = 'bold 280px Arial';
+ctx.textAlign = 'center';
+ctx.textBaseline = 'middle';
+ctx.fillText('⚡', 256, 280);
+
+// Add "BMS" text
+ctx.font = 'bold 60px Arial';
+ctx.fillText('BMS', 256, 380);
+
+// Create different sizes
+const sizes = [16, 32, 72, 96, 128, 144, 152, 192, 384, 512];
+sizes.forEach(size => {
+  const smallCanvas = document.createElement('canvas');
+  smallCanvas.width = size;
+  smallCanvas.height = size;
+  const smallCtx = smallCanvas.getContext('2d');
+  smallCtx.drawImage(canvas, 0, 0, size, size);
+  
+  const link = document.createElement('a');
+  link.download = `icon-${size}x${size}.png`;
+  link.href = smallCanvas.toDataURL();
+  link.click();
+});
+</script>
+</body>
+</html>
