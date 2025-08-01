@@ -58,5 +58,6 @@ RUN npm install
 # The --save flag is not necessary for modern cordova versions
 RUN cordova platform add android@12.0.1
 
-# Keep the container running indefinitely.
-CMD ["tail", "-f", "/dev/null"]
+# Set the default command to build a debug APK.
+# This version is signed with a debug key and can be installed for testing.
+CMD ["cordova", "build", "android", "--debug", "--", "--packageType=apk"]
