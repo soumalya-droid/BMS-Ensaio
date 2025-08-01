@@ -1,0 +1,6 @@
+## Pages
+- [Admin Dashboard - Battery Management System](/admindashboard): Comprehensive admin dashboard for managing all batteries, users, and system operations in the Battery Management System.
+- [Battery  - BMS](/batterydetails): No description available
+- [BMS - Powering Smarter Batteries. Smarter Businesses.](/home): A modern Battery Management System for real-time monitoring, analytics, and optimization. Perfect for EV fleets, energy storage, and more.
+- [Login - Battery Management System](/login): Login to your Battery Management System account to monitor and manage your batteries in real-time.
+- [Register - Battery Management System](/register): Create your Battery Management System account to start monitoring and managing your batteries with advanced analytics.
