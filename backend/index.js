@@ -71,7 +71,7 @@ app.get('/api/batteries', authenticateToken, async (req, res) => {
         gps.gps_lat_coordinate as latitude,
         gps.gps_long_coordinate as longitude
       FROM bms_values bms
-      INNER JOIN user_batteries ub ON bms.device_id = ub.device_id
+      INNER JOIN bms_identification bi ON bms.device_id = bi.device_id
       LEFT JOIN (
         SELECT DISTINCT ON (device_id)
           device_id,
@@ -80,7 +80,7 @@ app.get('/api/batteries', authenticateToken, async (req, res) => {
         FROM iot_gps
         ORDER BY device_id, timestamp DESC
       ) gps ON bms.device_id = gps.device_id
-      WHERE ub.user_id = $1
+      WHERE bi.user_id = $1
       ORDER BY bms.device_id, bms.timestamp DESC
     `, [userId]);
 
