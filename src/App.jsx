@@ -73,20 +73,24 @@ function AppRoutes() {
 
 function App() {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <Router>
-          <div className="min-h-screen bg-background text-foreground">
-            <Helmet>
-              <title>Battery Management System - Advanced BMS Platform</title>
-              <meta name="description" content="Professional battery management system with real-time monitoring, GPS tracking, and predictive analytics for optimal battery performance." />
-            </Helmet>
-            <AppRoutes />
-            <Toaster />
-          </div>
-        </Router>
-      </AuthProvider>
-    </ThemeProvider>
+    <PWAProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <Router>
+            <div className="min-h-screen bg-background text-foreground">
+              <Helmet>
+                <title>Battery Management System - Advanced BMS Platform</title>
+                <meta name="description" content="Professional battery management system with real-time monitoring, GPS tracking, and predictive analytics for optimal battery performance." />
+              </Helmet>
+              <OfflineIndicator />
+              <AppRoutes />
+              <InstallPrompt />
+              <Toaster />
+            </div>
+          </Router>
+        </AuthProvider>
+      </ThemeProvider>
+    </PWAProvider>
   );
 }
 
