@@ -343,4 +343,37 @@ app.post('/api/notifications/:type/:id/read', async (req, res) => {
   }
 });
 
+// PWA Push Notification Endpoints
+app.post('/api/push-subscribe', async (req, res) => {
+  const subscription = req.body;
+  console.log('Push subscription received:', subscription);
+  
+  // Store subscription in database (implement based on your needs)
+  // For now, just acknowledge the subscription
+  res.json({ success: true, message: 'Push subscription received' });
+});
+
+app.post('/api/push-unsubscribe', async (req, res) => {
+  const { endpoint } = req.body;
+  console.log('Push unsubscription for endpoint:', endpoint);
+  
+  // Remove subscription from database (implement based on your needs)
+  res.json({ success: true, message: 'Push unsubscription processed' });
+});
+
+// Test push notification endpoint
+app.post('/api/test-push', async (req, res) => {
+  try {
+    // This would normally send a push notification
+    // For now, just return success
+    res.json({ 
+      success: true, 
+      message: 'Push notification would be sent in production with proper VAPID keys' 
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to send push notification' });
+  }
+});
+
 app.listen(4000, () => console.log('Backend running on port 4000'));
