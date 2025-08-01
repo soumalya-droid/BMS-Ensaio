@@ -217,6 +217,15 @@ export default defineConfig({
 				'@babel/generator',
 				'@babel/types'
 			]
-		}
+		},
+		// PWA Optimizations
+		assetsDir: 'assets',
+		sourcemap: false, // Disable for production
+		chunkSizeWarningLimit: 1000,
+	},
+	// PWA Configuration
+	base: '/',
+	optimizeDeps: {
+		exclude: ['@babel/parser', '@babel/traverse', '@babel/generator', '@babel/types']
 	}
 });
