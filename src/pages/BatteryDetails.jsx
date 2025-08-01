@@ -24,6 +24,7 @@ export default function BatteryDetails() {
   const [voltageData, setVoltageData] = useState([]);
   const [temperatureData, setTemperatureData] = useState([]);
   const [healthData, setHealthData] = useState([]);
+  const [chargeData, setChargeData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -37,13 +38,17 @@ export default function BatteryDetails() {
           logsResponse,
           voltageResponse,
           temperatureResponse,
-          healthResponse
+          healthResponse,
+          chargeResponse,
         ] = await Promise.all([
           fetch(`http://localhost:4000/api/batteries/${id}`),
           fetch(`http://localhost:4000/api/batteries/${id}/logs`),
           fetch(`http://localhost:4000/api/batteries/${id}/historical?metric=voltage`),
           fetch(`http://localhost:4000/api/batteries/${id}/historical?metric=temperature`),
           fetch(`http://localhost:4000/api/batteries/${id}/historical?metric=health`),
+          fetch(
+            `http://localhost:4000/api/batteries/${id}/historical?metric=stateOfCharge`
+          ),
         ]);
 
         if (!batteryResponse.ok) {
@@ -63,6 +68,7 @@ export default function BatteryDetails() {
         if (voltageResponse.ok) setVoltageData(await voltageResponse.json());
         if (temperatureResponse.ok) setTemperatureData(await temperatureResponse.json());
         if (healthResponse.ok) setHealthData(await healthResponse.json());
+        if (chargeResponse.ok) setChargeData(await chargeResponse.json());
 
       } catch (err) {
         setError(err.message);
@@ -183,6 +189,7 @@ export default function BatteryDetails() {
                 voltageData={voltageData}
                 temperatureData={temperatureData}
                 healthData={healthData}
+                chargeData={chargeData}
               />
               <LocationTab battery={battery} />
               <LogsTab logs={logs} />
