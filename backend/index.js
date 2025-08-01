@@ -101,8 +101,8 @@ app.get('/api/batteries', authenticateToken, async (req, res) => {
 
     res.json(batteries);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error("Error fetching batteries:", err);
+    res.status(500).json({ error: 'Internal server error', details: err.message });
   }
 });
 
