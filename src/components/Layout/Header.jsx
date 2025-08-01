@@ -25,7 +25,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { toast } from '@/components/ui/use-toast';
 
-export default function Header({ onMenuClick }) {
+export default function Header({ onMenuClick, searchQuery, setSearchQuery }) {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [notifications, setNotifications] = useState([]);
@@ -65,13 +65,6 @@ export default function Header({ onMenuClick }) {
     });
   };
 
-  const handleSearch = () => {
-    toast({
-      title: "🔎 Search",
-      description: "🚧 This feature isn't implemented yet—but don't worry! You can request it in your next prompt! 🚀",
-    });
-  };
-
   return (
     <motion.header
       initial={{ y: -20, opacity: 0 }}
@@ -93,9 +86,10 @@ export default function Header({ onMenuClick }) {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Search batteries, users, alerts..."
+              placeholder="Search batteries..."
               className="pl-10"
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
         </div>
@@ -131,32 +125,34 @@ export default function Header({ onMenuClick }) {
               )}
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80 bg-muted">
+          <DropdownMenuContent align="end" className="w-80 bg-muted max-h-[300px] overflow-y-auto">
             <DropdownMenuLabel>Notifications</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            {notifications.length > 0 ? (
-              notifications.map(n => (
-                <DropdownMenuItem key={`${n.type}-${n.id}`} onSelect={() => !n.read && handleMarkAsRead(n.type, n.id)}>
-                  <div className="flex items-start space-x-3">
-                    {n.type === 'alarm' ? <AlertCircle className="w-5 h-5 text-yellow-500" /> : <AlertCircle className="w-5 h-5 text-red-500" />}
-                    <div>
-                      <p className={`font-medium ${!n.read ? 'text-foreground' : 'text-muted-foreground'}`}>
-                        {n.type.charAt(0).toUpperCase() + n.type.slice(1)} Code: {n.code}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(n.timestamp).toLocaleString()}
-                      </p>
+            <div className="max-h-full">
+              {notifications.length > 0 ? (
+                notifications.map(n => (
+                  <DropdownMenuItem key={`${n.type}-${n.id}`} onSelect={() => !n.read && handleMarkAsRead(n.type, n.id)}>
+                    <div className="flex items-start space-x-3">
+                      {n.type === 'alarm' ? <AlertCircle className="w-5 h-5 text-yellow-500" /> : <AlertCircle className="w-5 h-5 text-red-500" />}
+                      <div>
+                        <p className={`font-medium ${!n.read ? 'text-foreground' : 'text-muted-foreground'}`}>
+                          {n.type.charAt(0).toUpperCase() + n.type.slice(1)} Code: {n.code}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(n.timestamp).toLocaleString()}
+                        </p>
+                      </div>
+                      {!n.read && <div className="w-2 h-2 bg-blue-500 rounded-full ml-auto"></div>}
                     </div>
-                    {!n.read && <div className="w-2 h-2 bg-blue-500 rounded-full ml-auto"></div>}
-                  </div>
+                  </DropdownMenuItem>
+                ))
+              ) : (
+                <DropdownMenuItem disabled>
+                  <CheckCircle className="w-5 h-5 mr-3" />
+                  No new notifications
                 </DropdownMenuItem>
-              ))
-            ) : (
-              <DropdownMenuItem disabled>
-                <CheckCircle className="w-5 h-5 mr-3" />
-                No new notifications
-              </DropdownMenuItem>
-            )}
+              )}
+            </div>
           </DropdownMenuContent>
         </DropdownMenu>
 

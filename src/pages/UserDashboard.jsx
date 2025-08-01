@@ -24,12 +24,11 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
 import { getActiveAlerts } from '@/data/mockData'; // Keep for now
 
-export default function UserDashboard({ demo, sampleUser = {}, sampleBatteries = [], sampleAlerts = [] }) {
+export default function UserDashboard({ demo, sampleUser = {}, sampleBatteries = [], sampleAlerts = [], searchQuery, setSearchQuery }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [batteries, setBatteries] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [chartData, setChartData] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { user, token } = demo ? { user: sampleUser, token: 'sample-token' } : useAuth();
@@ -121,7 +120,7 @@ export default function UserDashboard({ demo, sampleUser = {}, sampleBatteries =
       />
       
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header onMenuClick={() => setSidebarOpen(true)} />
+        <Header onMenuClick={() => setSidebarOpen(true)} searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
         
         <main className="flex-1 overflow-auto p-6 space-y-6">
           {loading ? (

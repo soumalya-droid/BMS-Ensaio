@@ -27,6 +27,7 @@ function ProtectedRoute({ children, adminOnly = false }) {
 
 function AppRoutes() {
   const { isAuthenticated, user } = useAuth();
+  const [searchQuery, setSearchQuery] = React.useState('');
   
   return (
     <Routes>
@@ -43,7 +44,7 @@ function AppRoutes() {
         path="/dashboard" 
         element={
           <ProtectedRoute>
-            {user?.role === 'admin' ? <AdminDashboard /> : <UserDashboard />}
+            {user?.role === 'admin' ? <AdminDashboard /> : <UserDashboard searchQuery={searchQuery} setSearchQuery={setSearchQuery} />}
           </ProtectedRoute>
         } 
       />
