@@ -19,6 +19,7 @@ import HomepageHeader from '@/components/Homepage/HomepageHeader';
 import Footer from '@/components/Homepage/Footer';
 import Section from '@/components/Homepage/Section';
 import AnimatedCounter from '@/components/Homepage/AnimatedCounter';
+import PWABanner from '@/components/PWA/PWABanner.jsx';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
