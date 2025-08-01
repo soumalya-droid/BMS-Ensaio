@@ -13,6 +13,7 @@ export function useAuth() {
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [token, setToken] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -25,6 +26,7 @@ export function AuthProvider({ children }) {
       try {
         const userData = JSON.parse(storedUser);
         setUser(userData);
+        setToken(storedToken);
         setIsAuthenticated(true);
       } catch (error) {
         localStorage.removeItem('bms_user');
@@ -46,6 +48,7 @@ export function AuthProvider({ children }) {
       localStorage.setItem('bms_user', JSON.stringify(data.user));
       localStorage.setItem('bms_token', data.token);
       setUser(data.user);
+      setToken(data.token);
       setIsAuthenticated(true);
       toast({
         title: "Login Successful",
@@ -104,6 +107,7 @@ export function AuthProvider({ children }) {
 
   const value = {
     user,
+    token,
     isAuthenticated,
     loading,
     login,
