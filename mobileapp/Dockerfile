@@ -2,8 +2,8 @@
 FROM openjdk:11-jdk
 
 # Set environment variables for Android SDK
-ENV ANDROID_SDK_ROOT /opt/android-sdk
-ENV PATH $PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools
+ENV ANDROID_SDK_ROOT=/opt/android-sdk
+ENV PATH=$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools
 
 # Install necessary system packages, including wget, unzip, and git.
 RUN apt-get update && \
@@ -22,11 +22,13 @@ RUN apt-get update && \
 
 # Download and install Android SDK command-line tools
 RUN mkdir -p $ANDROID_SDK_ROOT && \
-    wget -O android-sdk.zip "https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip" && \
+    wget -O android-sdk.zip "https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip" && \
     unzip android-sdk.zip -d $ANDROID_SDK_ROOT && \
     rm android-sdk.zip && \
-    mkdir -p $ANDROID_SDK_ROOT/cmdline-tools/latest && \
-    mv $ANDROID_SDK_ROOT/cmdline-tools/* $ANDROID_SDK_ROOT/cmdline-tools/latest/
+    # The unzipped directory is called `cmdline-tools`. We rename it to `latest`
+    # to match the expected path structure.
+    mkdir -p $ANDROID_SDK_ROOT/cmdline-tools && \
+    mv $ANDROID_SDK_ROOT/cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
 
 # Accept Android SDK licenses
 RUN yes | sdkmanager --licenses
