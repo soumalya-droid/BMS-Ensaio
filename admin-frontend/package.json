@@ -13,8 +13,8 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^6.25.1",
-    "apexcharts": "^3.53.0",
-    "react-apexcharts": "^1.4.1",
+    "apexcharts": "^4.0.0",
+    "react-apexcharts": "^1.7.0",
     "lucide-react": "^0.417.0"
   },
   "devDependencies": {
