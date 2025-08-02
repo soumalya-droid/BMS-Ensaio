@@ -10,7 +10,6 @@ import UserDashboard from '@/pages/UserDashboard.jsx';
 import AdminDashboard from '@/pages/AdminDashboard.jsx';
 import BatteryDetails from '@/pages/BatteryDetails.jsx';
 import HomePage from '@/pages/HomePage.jsx';
-import RentalsPage from '@/pages/RentalsPage.jsx';
 
 function ProtectedRoute({ children, adminOnly = false }) {
   const { user, isAuthenticated } = useAuth();
@@ -64,14 +63,6 @@ function AppRoutes() {
             <BatteryDetails />
           </ProtectedRoute>
         } 
-      />
-      <Route
-        path="/rentals"
-        element={
-          <ProtectedRoute>
-            <RentalsPage />
-          </ProtectedRoute>
-        }
       />
     </Routes>
   );

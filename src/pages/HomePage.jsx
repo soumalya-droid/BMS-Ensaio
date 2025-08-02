@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
 import {
   BatteryCharging,
   Cpu,
@@ -24,12 +23,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useScrollAnimation } from '@/hooks/useScrollAnimation';
-import { useAuth } from '@/contexts/AuthContext';
 import AdminDashboard from './AdminDashboard';
 import UserDashboard from './UserDashboard';
 
 const HomePage = () => {
-  const { isAuthenticated } = useAuth();
   const [isUserView, setIsUserView] = useState(true);
   const { ref: partnersRef, controls: partnersControls, animationVariants: partnersVariants } = useScrollAnimation(0.2);
   const { ref: testimonialsRef, controls: testimonialsControls, animationVariants: testimonialsVariants } = useScrollAnimation(0.2);
@@ -131,10 +128,9 @@ const HomePage = () => {
               className="mt-10"
             >
               <Button asChild size="lg" className="electric-blue-bg-gradient text-white font-bold text-lg px-8 py-6">
-                <Link to={isAuthenticated ? "/dashboard" : "/login"}>
-                  {isAuthenticated ? "Go to Dashboard" : "Get Started"}
-                  <ChevronRight className="ml-2" />
-                </Link>
+                <a href="http://localhost:8069" target="_blank" rel="noopener noreferrer">
+                  ERP / Admin Login <ChevronRight className="ml-2" />
+                </a>
               </Button>
             </motion.div>
           </div>

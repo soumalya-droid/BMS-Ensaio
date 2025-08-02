@@ -9,15 +9,13 @@ import {
   Users, 
   Shield,
   Home,
-  AlertTriangle,
-  ShoppingBag
+  AlertTriangle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 
 const sidebarItems = [
   { icon: Home, label: 'Dashboard', path: '/dashboard' },
-  { icon: ShoppingBag, label: 'Rentals', path: '/rentals' },
   { icon: Battery, label: 'Batteries', path: '/batteries' },
   { icon: BarChart3, label: 'Analytics', path: '/analytics' },
   { icon: MapPin, label: 'GPS Tracking', path: '/tracking' },
