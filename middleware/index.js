@@ -13,20 +13,30 @@ const { ODOO_URL, ODOO_DB, ODOO_USER, ODOO_PASSWORD } = process.env;
 
 // --- Odoo Connection ---
 let odoo;
-const connectToOdoo = async () => {
-    try {
-        odoo = new Odoo({
-            baseUrl: ODOO_URL,
-            db: ODOO_DB,
-            username: ODOO_USER,
-            password: ODOO_PASSWORD,
-        });
-        await odoo.connect();
-        console.log('Successfully connected to Odoo.');
-    } catch (err) {
-        console.error('Failed to connect to Odoo:', err);
-        // We might want to exit the process if the connection fails at startup
-        process.exit(1);
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+const connectToOdoo = async (retries = 5, delay = 5000) => {
+    for (let i = 1; i <= retries; i++) {
+        try {
+            odoo = new Odoo({
+                baseUrl: ODOO_URL,
+                db: ODOO_DB,
+                username: ODOO_USER,
+                password: ODOO_PASSWORD,
+            });
+            await odoo.connect();
+            console.log('Successfully connected to Odoo.');
+            return; // Success, exit the function
+        } catch (err) {
+            console.error(`Failed to connect to Odoo on attempt ${i}/${retries}:`, err.message);
+            if (i < retries) {
+                console.log(`Retrying in ${delay / 1000} seconds...`);
+                await sleep(delay);
+            } else {
+                console.error('All attempts to connect to Odoo failed.');
+                throw new Error('Could not connect to Odoo after multiple retries.');
+            }
+        }
     }
 };
 
@@ -83,9 +93,16 @@ app.post('/api/rentals', async (req, res) => {
 // --- Server Startup ---
 const PORT = process.env.PORT || 4001;
 
-// Connect to Odoo first, then start the server
-connectToOdoo().then(() => {
-    app.listen(PORT, () => {
-        console.log(`Middleware server running on port ${PORT}`);
-    });
-});
+const startServer = async () => {
+    try {
+        await connectToOdoo();
+        app.listen(PORT, () => {
+            console.log(`Middleware server running on port ${PORT}`);
+        });
+    } catch (err) {
+        console.error('Failed to start middleware server:', err.message);
+        process.exit(1); // Exit if we cannot connect to Odoo
+    }
+};
+
+startServer();
