@@ -74,6 +74,15 @@ services:
       - ODOO_PASSWORD=admin
     restart: always
 
+  admin-frontend:
+    build: ./admin-frontend
+    container_name: admin-frontend
+    ports:
+      - "4174:5173" # Vite's default port is 5173
+    depends_on:
+      - middleware
+    restart: always
+
 volumes:
   db_data:
   odoo-data:
