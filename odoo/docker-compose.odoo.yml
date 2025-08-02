@@ -1,37 +1,5 @@
 version: '3.8'
 services:
-  db:
-    image: postgres:15
-    restart: always
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: bms
-    ports:
-      - "5432:5432"
-    volumes:
-      - db_data:/var/lib/postgresql/data
-      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
-      - ./backend/bms_schema.sql:/docker-entrypoint-initdb.d/bms_schema.sql
-
-  backend:
-    build: ./backend
-    restart: always
-    environment:
-      DATABASE_URL: postgres://postgres:postgres@db:5432/bms
-      JWT_SECRET: supersecretkey
-    ports:
-      - "4000:4000"
-    depends_on:
-      - db
-
-  frontend:
-    build: .
-    ports:
-      - "4173:4173"
-    depends_on:
-      - backend
-
   odoo:
     image: odoo:16.0
     container_name: odoo
@@ -41,8 +9,8 @@ services:
       - "8069:8069"
     volumes:
       - odoo-data:/var/lib/odoo
-      - ./odoo/addons:/mnt/extra-addons
-      - ./odoo/odoo.conf:/etc/odoo/odoo.conf
+      - ./addons:/mnt/extra-addons
+      - ./odoo.conf:/etc/odoo/odoo.conf
     environment:
       - HOST=db-odoo
       - USER=odoo
@@ -61,7 +29,7 @@ services:
     restart: always
 
   middleware:
-    build: ./middleware
+    build: ../middleware
     container_name: odoo-middleware
     depends_on:
       - odoo
@@ -75,6 +43,5 @@ services:
     restart: always
 
 volumes:
-  db_data:
   odoo-data:
   odoo-db-data:
