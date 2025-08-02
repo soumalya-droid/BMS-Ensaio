@@ -24,10 +24,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useScrollAnimation } from '@/hooks/useScrollAnimation';
+import { useAuth } from '@/contexts/AuthContext';
 import AdminDashboard from './AdminDashboard';
 import UserDashboard from './UserDashboard';
 
 const HomePage = () => {
+  const { isAuthenticated } = useAuth();
   const [isUserView, setIsUserView] = useState(true);
   const { ref: partnersRef, controls: partnersControls, animationVariants: partnersVariants } = useScrollAnimation(0.2);
   const { ref: testimonialsRef, controls: testimonialsControls, animationVariants: testimonialsVariants } = useScrollAnimation(0.2);
@@ -129,7 +131,10 @@ const HomePage = () => {
               className="mt-10"
             >
               <Button asChild size="lg" className="electric-blue-bg-gradient text-white font-bold text-lg px-8 py-6">
-                <Link to="/login">Get Started <ChevronRight className="ml-2" /></Link>
+                <Link to={isAuthenticated ? "/dashboard" : "/login"}>
+                  {isAuthenticated ? "Go to Dashboard" : "Get Started"}
+                  <ChevronRight className="ml-2" />
+                </Link>
               </Button>
             </motion.div>
           </div>

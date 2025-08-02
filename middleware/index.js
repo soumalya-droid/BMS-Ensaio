@@ -6,7 +6,19 @@ import Odoo from 'odoo-await';
 dotenv.config();
 
 const app = express();
-app.use(cors());
+
+const allowedOrigins = ['http://localhost:4173', 'http://localhost:4174'];
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 const { ODOO_URL, ODOO_DB, ODOO_USER, ODOO_PASSWORD } = process.env;
