@@ -48,6 +48,11 @@ services:
       - USER=odoo
       - PASSWORD=odoo
     restart: always
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import xmlrpc.client; xmlrpc.client.ServerProxy('http://localhost:8069/xmlrpc/2/common').list()"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
 
   db-odoo:
     image: postgres:15
@@ -64,7 +69,8 @@ services:
     build: ./middleware
     container_name: odoo-middleware
     depends_on:
-      - odoo
+      odoo:
+        condition: service_healthy
     ports:
       - "4001:4001"
     environment:
