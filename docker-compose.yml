@@ -49,7 +49,7 @@ services:
       - PASSWORD=odoo
     restart: always
     healthcheck:
-      test: ["CMD", "python3", "-c", "import xmlrpc.client; xmlrpc.client.ServerProxy('http://localhost:8069/xmlrpc/2/common').list()"]
+      test: ["CMD", "python3", "-c", "import xmlrpc.client; url = 'http://localhost:8069'; db = 'odoo'; username = 'admin'; password = 'admin'; common = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/common'); uid = common.authenticate(db, username, password, {}); exit(0) if uid else exit(1)"]
       interval: 10s
       timeout: 5s
       retries: 30
